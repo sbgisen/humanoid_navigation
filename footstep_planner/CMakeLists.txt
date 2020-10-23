@@ -89,15 +89,19 @@ set(FOOTSTEP_PLANNER_FILES src/FootstepPlanner.cpp
 )
 
 add_library(${PROJECT_NAME} ${FOOTSTEP_PLANNER_FILES})
+add_dependencies(${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${SBPL_LIBRARIES})
 
 add_executable(footstep_planner_node src/footstep_planner.cpp)
+add_dependencies(footstep_planner_node ${catkin_EXPORTED_TARGETS})
 target_link_libraries(footstep_planner_node ${PROJECT_NAME} ${SBPL_LIBRARIES})
 
 add_executable(footstep_planner_walls src/footstep_planner_walls.cpp)
+add_dependencies(footstep_planner_walls ${catkin_EXPORTED_TARGETS})
 target_link_libraries(footstep_planner_walls ${PROJECT_NAME} ${OpenCV_LIBRARIES} ${SBPL_LIBRARIES})
 
 add_executable(footstep_navigation_node src/footstep_navigation.cpp)
+add_dependencies(footstep_navigation_node ${catkin_EXPORTED_TARGETS})
 target_link_libraries(footstep_navigation_node ${PROJECT_NAME} ${SBPL_LIBRARIES})
 
 ################################################################################
