@@ -804,6 +804,7 @@ void HumanoidLocalization::voxelGridSampling(const PointCloud & pc, pcl::PointCl
    pcl::PointCloud<pcl::PointXYZ>::Ptr cloudPtr;
    cloudPtr.reset(new pcl::PointCloud<pcl::PointXYZ> (pc)); // TODO: Check if this is a shallow copy..
    uniformSampling.setInputCloud(cloudPtr);
+   pcl::PointCloud<pcl::PointXYZ>::Ptr filteredCloud;
    uniformSampling.setRadiusSearch(search_radius);
 #if PCL_MINOR_VERSION == 8
    uniformSampling.filter(*filteredCloud);
