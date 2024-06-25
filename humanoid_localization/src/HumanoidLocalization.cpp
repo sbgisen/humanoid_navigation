@@ -603,16 +603,11 @@ void HumanoidLocalization::prepareLaserPointCloud(const sensor_msgs::LaserScanCo
   uniformSampling.setInputCloud(cloudPtr);
   uniformSampling.setRadiusSearch(m_sensorSampleDist);
   pcl::PointCloud<int> sampledIndices;
-#if PCL_MINOR_VERSION == 8
   uniformSampling.filter(pc);
   for (auto ind : *uniformSampling.getIndices())
   {
     sampledIndices.push_back(ind);
   }
-#elif PCL_MINOR_VERSION <= 7
-  uniformSampling.compute(sampledIndices);
-  pcl::copyPointCloud(*cloudPtr, sampledIndices.points, pc);
-#endif
   // adjust "ranges" array to contain the same points:
   std::vector<float> rangesSparse;
   rangesSparse.resize(sampledIndices.size());
@@ -881,15 +876,11 @@ void HumanoidLocalization::voxelGridSampling(const PointCloud& pc, pcl::PointClo
   uniformSampling.setInputCloud(cloudPtr);
   pcl::PointCloud<pcl::PointXYZ>::Ptr filteredCloud;
   uniformSampling.setRadiusSearch(search_radius);
-#if PCL_MINOR_VERSION == 8
   uniformSampling.filter(*filteredCloud);
   for (auto ind : *uniformSampling.getIndices())
   {
     sampledIndices.push_back(ind);
   }
-#else
-  uniformSampling.compute(sampledIndices);
-#endif
 }
 
 void HumanoidLocalization::pointCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg)
