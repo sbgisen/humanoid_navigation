@@ -48,7 +48,6 @@
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/passthrough.h>
 
-
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/PoseWithCovariance.h>
@@ -59,17 +58,18 @@
 #include <humanoid_localization/ObservationModel.h>
 #include <humanoid_localization/RaycastingModel.h>
 #ifndef SKIP_ENDPOINT_MODEL
-  #include <humanoid_localization/EndpointModel.h>
+#include <humanoid_localization/EndpointModel.h>
 #endif
-
 
 #include <octomap/octomap.h>
 #include <sensor_msgs/Imu.h>
 #include <boost/circular_buffer.hpp>
 
-namespace humanoid_localization{
+namespace humanoid_localization
+{
 
-static inline void getRP(const geometry_msgs::Quaternion& msg_q, double& roll, double& pitch){
+static inline void getRP(const geometry_msgs::Quaternion& msg_q, double& roll, double& pitch)
+{
   tf::Quaternion bt_q;
   tf::quaternionMsgToTF(msg_q, bt_q);
   double useless_yaw;
@@ -79,10 +79,11 @@ static inline void getRP(const geometry_msgs::Quaternion& msg_q, double& roll, d
     ROS_WARN("Non-zero yaw in IMU quaterion is ignored");
 }
 
-class HumanoidLocalization {
+class HumanoidLocalization
+{
 public:
-    // some typedefs
-    //typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
+  // some typedefs
+  // typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
 
 public:
   HumanoidLocalization(unsigned randomSeed);
@@ -118,7 +119,9 @@ public:
   void initGlobal();
 
   // needed for pointcloud callback (from OctomapServer)
-  static void filterGroundPlane(const PointCloud& pc, PointCloud& ground, PointCloud& nonground, double groundFilterDistance, double groundFilterAngle, double groundFilterPlaneDistance);
+  static void filterGroundPlane(const PointCloud& pc, PointCloud& ground, PointCloud& nonground,
+                                double groundFilterDistance, double groundFilterAngle,
+                                double groundFilterPlaneDistance);
 
 protected:
   /**
@@ -130,7 +133,6 @@ protected:
 
   // converts particles into PoseArray and publishes them for visualization
   void publishPoseEstimate(const ros::Time& time, bool publish_eval);
-
 
   /**
    * Normalizes the weights and transforms from log to normal scale
@@ -169,17 +171,19 @@ protected:
    * near range measurements out and creates a sparse point cloud (out of m_numSensorBeams points)
    *
    */
-  void prepareLaserPointCloud(const sensor_msgs::LaserScanConstPtr& laser, PointCloud& pc, std::vector<float>& ranges) const;
+  void prepareLaserPointCloud(const sensor_msgs::LaserScanConstPtr& laser, PointCloud& pc,
+                              std::vector<float>& ranges) const;
 
   /**
    * Prepares a PointCloud msg to be integrated into the observations model. Filters
    * near range, floor and subsamples a sparse point cloud (out of m_numSensorBeams points)
    *
    */
-  void prepareGeneralPointCloud(const sensor_msgs::PointCloud2::ConstPtr& msg, PointCloud& pc, std::vector<float>& ranges) const;
-  int filterUniform( const PointCloud & cloud_in, PointCloud & cloud_out, int numSamples) const;
+  void prepareGeneralPointCloud(const sensor_msgs::PointCloud2::ConstPtr& msg, PointCloud& pc,
+                                std::vector<float>& ranges) const;
+  int filterUniform(const PointCloud& cloud_in, PointCloud& cloud_out, int numSamples) const;
 
-  void voxelGridSampling(const PointCloud & pc, pcl::PointCloud<int> & sampledIndices, double searchRadius) const;
+  void voxelGridSampling(const PointCloud& pc, pcl::PointCloud<int>& sampledIndices, double searchRadius) const;
 
   bool isAboveMotionThreshold(const tf::Pose& odomTransform);
 
@@ -187,7 +191,7 @@ protected:
 
   void constrainMotion(const tf::Pose& odomPose);
 
-  void timerCallback(const ros::TimerEvent & e);
+  void timerCallback(const ros::TimerEvent& e);
 
   unsigned computeBeamStep(unsigned numBeams) const;
 
@@ -218,9 +222,8 @@ protected:
   message_filters::Subscriber<geometry_msgs::PoseWithCovarianceStamped>* m_initPoseSub;
   tf::MessageFilter<geometry_msgs::PoseWithCovarianceStamped>* m_initPoseFilter;
 
-  ros::Publisher m_posePub, m_poseEvalPub, m_poseOdomPub, m_poseTruePub,
-                 m_poseArrayPub, m_bestPosePub, m_nEffPub,
-                 m_filteredPointCloudPub;
+  ros::Publisher m_posePub, m_poseEvalPub, m_poseOdomPub, m_poseTruePub, m_poseArrayPub, m_bestPosePub, m_nEffPub,
+      m_filteredPointCloudPub;
   ros::Subscriber m_imuSub;
   ros::ServiceServer m_globalLocSrv, m_pauseLocSrv, m_resumeLocSrv;
   tf::TransformListener m_tfListener;
@@ -240,18 +243,17 @@ protected:
 
   double m_nEffFactor;
   double m_minParticleWeight;
-  Vector6d m_initPose;	// fixed init. pose (from params)
-  Vector6d m_initNoiseStd; // Std.dev for init. pose
-  bool m_initPoseRealZRP; // override z, roll, pitch with real values from robot
+  Vector6d m_initPose;      // fixed init. pose (from params)
+  Vector6d m_initNoiseStd;  // Std.dev for init. pose
+  bool m_initPoseRealZRP;   // override z, roll, pitch with real values from robot
 
   double m_filterMaxRange;
   double m_filterMinRange;
 
-
   Particles m_particles;
   int m_bestParticleIdx;
-  tf::Pose m_odomPose; // incrementally added odometry pose (=dead reckoning)
-  geometry_msgs::PoseArray m_poseArray; // particles as PoseArray (preallocated)
+  tf::Pose m_odomPose;                   // incrementally added odometry pose (=dead reckoning)
+  geometry_msgs::PoseArray m_poseArray;  // particles as PoseArray (preallocated)
   boost::circular_buffer<sensor_msgs::Imu> m_lastIMUMsgBuffer;
 
   bool m_bestParticleAsMean;
@@ -270,7 +272,6 @@ protected:
   ros::Time m_lastLaserTime;
   ros::Time m_lastPointCloudTime;
 
-
   // PointCloud parameters
 
   bool m_groundFilterPointCloud;
@@ -278,7 +279,6 @@ protected:
   double m_groundFilterAngle;
   double m_groundFilterPlaneDistance;
   double m_sensorSampleDistGroundFactor;
-
 
   /// sensor data last integrated at this odom pose, to check if moved enough since then
   tf::Pose m_lastLocalizedPose;
@@ -290,13 +290,13 @@ protected:
   double m_headPitchRotationLastScan;
 
   bool m_useIMU;  ///< True = use IMU for initialization and observation models, false = use orientation from odometry
-  bool m_constrainMotionZ; /// < True = do not estimate height, directly use odometry pose
-  bool m_constrainMotionRP; /// < True = do not estimate roll and pitch, directly use odometry pose
+  bool m_constrainMotionZ;   /// < True = do not estimate height, directly use odometry pose
+  bool m_constrainMotionRP;  /// < True = do not estimate roll and pitch, directly use odometry pose
 
   // timer stuff
   bool m_useTimer;
   double m_timerPeriod;
 };
-}
+}  // namespace humanoid_localization
 
 #endif

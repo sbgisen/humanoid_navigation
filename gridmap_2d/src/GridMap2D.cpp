@@ -31,40 +31,39 @@
 #include "gridmap_2d/GridMap2D.h"
 #include <ros/console.h>
 
-namespace gridmap_2d{
-
-GridMap2D::GridMap2D()
-: m_frameId("/map")
+namespace gridmap_2d
 {
 
+GridMap2D::GridMap2D() : m_frameId("/map")
+{
 }
 
-GridMap2D::GridMap2D(const nav_msgs::OccupancyGridConstPtr& gridMap, bool unknown_as_obstacle) {
-
+GridMap2D::GridMap2D(const nav_msgs::OccupancyGridConstPtr& gridMap, bool unknown_as_obstacle)
+{
   setMap(gridMap, unknown_as_obstacle);
-
 }
 
 GridMap2D::GridMap2D(const GridMap2D& other)
- : m_binaryMap(other.m_binaryMap.clone()),
-   m_distMap(other.m_distMap.clone()),
-   m_mapInfo(other.m_mapInfo),
-   m_frameId(other.m_frameId)
+  : m_binaryMap(other.m_binaryMap.clone())
+  , m_distMap(other.m_distMap.clone())
+  , m_mapInfo(other.m_mapInfo)
+  , m_frameId(other.m_frameId)
 {
-
 }
 
-GridMap2D::~GridMap2D() {
-
+GridMap2D::~GridMap2D()
+{
 }
 
-void GridMap2D::updateDistanceMap(){
+void GridMap2D::updateDistanceMap()
+{
   cv::distanceTransform(m_binaryMap, m_distMap, cv::DIST_L2, cv::DIST_MASK_PRECISE);
   // distance map now contains distance in meters:
   m_distMap = m_distMap * m_mapInfo.resolution;
 }
 
-void GridMap2D::setMap(const nav_msgs::OccupancyGridConstPtr& grid_map, bool unknown_as_obstacle){
+void GridMap2D::setMap(const nav_msgs::OccupancyGridConstPtr& grid_map, bool unknown_as_obstacle)
+{
   m_mapInfo = grid_map->info;
   m_frameId = grid_map->header.frame_id;
   // allocate map structs so that x/y in the world correspond to x/y in the image
@@ -74,19 +73,22 @@ void GridMap2D::setMap(const nav_msgs::OccupancyGridConstPtr& grid_map, bool unk
 
   std::vector<signed char>::const_iterator mapDataIter = grid_map->data.begin();
 
-  //TODO check / param
+  // TODO check / param
   unsigned char map_occ_thres = 70;
 
   // iterate over map, store in image
   // (0,0) is lower left corner of OccupancyGrid
-  for(unsigned int j = 0; j < m_mapInfo.height; ++j){
-    for(unsigned int i = 0; i < m_mapInfo.width; ++i){
-      if (*mapDataIter > map_occ_thres
-          || (unknown_as_obstacle && *mapDataIter < 0))
+  for (unsigned int j = 0; j < m_mapInfo.height; ++j)
+  {
+    for (unsigned int i = 0; i < m_mapInfo.width; ++i)
+    {
+      if (*mapDataIter > map_occ_thres || (unknown_as_obstacle && *mapDataIter < 0))
       {
-        m_binaryMap.at<uchar>(i,j) = OCCUPIED;
-      } else{
-        m_binaryMap.at<uchar>(i,j) = FREE;
+        m_binaryMap.at<uchar>(i, j) = OCCUPIED;
+      }
+      else
+      {
+        m_binaryMap.at<uchar>(i, j) = FREE;
       }
       ++mapDataIter;
     }
@@ -94,22 +96,26 @@ void GridMap2D::setMap(const nav_msgs::OccupancyGridConstPtr& grid_map, bool unk
 
   updateDistanceMap();
 
-  ROS_INFO("GridMap2D created with %d x %d cells at %f resolution.", m_mapInfo.width, m_mapInfo.height, m_mapInfo.resolution);
+  ROS_INFO("GridMap2D created with %d x %d cells at %f resolution.", m_mapInfo.width, m_mapInfo.height,
+           m_mapInfo.resolution);
 }
 
-nav_msgs::OccupancyGrid GridMap2D::toOccupancyGridMsg() const{
+nav_msgs::OccupancyGrid GridMap2D::toOccupancyGridMsg() const
+{
   nav_msgs::OccupancyGrid msg;
   msg.header.frame_id = m_frameId;
   msg.header.stamp = ros::Time::now();
   msg.info = m_mapInfo;
-  msg.data.resize(msg.info.height*msg.info.width);
+  msg.data.resize(msg.info.height * msg.info.width);
 
   // iterate over map, store in data
   std::vector<signed char>::iterator mapDataIter = msg.data.begin();
   // (0,0) is lower left corner of OccupancyGrid
-  for(unsigned int j = 0; j < m_mapInfo.height; ++j){
-    for(unsigned int i = 0; i < m_mapInfo.width; ++i){
-      if (m_binaryMap.at<uchar>(i,j) == OCCUPIED)
+  for (unsigned int j = 0; j < m_mapInfo.height; ++j)
+  {
+    for (unsigned int i = 0; i < m_mapInfo.width; ++i)
+    {
+      if (m_binaryMap.at<uchar>(i, j) == OCCUPIED)
         *mapDataIter = 100;
       else
         *mapDataIter = 0;
@@ -121,7 +127,8 @@ nav_msgs::OccupancyGrid GridMap2D::toOccupancyGridMsg() const{
   return msg;
 }
 
-void GridMap2D::setMap(const cv::Mat& binaryMap){
+void GridMap2D::setMap(const cv::Mat& binaryMap)
+{
   m_binaryMap = binaryMap.clone();
   m_distMap = cv::Mat(m_binaryMap.size(), CV_32FC1);
 
@@ -129,12 +136,13 @@ void GridMap2D::setMap(const cv::Mat& binaryMap){
   // distance map now contains distance in meters:
   m_distMap = m_distMap * m_mapInfo.resolution;
 
-  ROS_INFO("GridMap2D copied from existing cv::Mat with %d x %d cells at %f resolution.", m_mapInfo.width, m_mapInfo.height, m_mapInfo.resolution);
-
+  ROS_INFO("GridMap2D copied from existing cv::Mat with %d x %d cells at %f resolution.", m_mapInfo.width,
+           m_mapInfo.height, m_mapInfo.resolution);
 }
 
-void GridMap2D::inflateMap(double inflationRadius){
-  m_binaryMap = (m_distMap > inflationRadius );
+void GridMap2D::inflateMap(double inflationRadius)
+{
+  m_binaryMap = (m_distMap > inflationRadius);
   // recompute distance map with new binary map:
   cv::distanceTransform(m_binaryMap, m_distMap, cv::DIST_L2, cv::DIST_MASK_PRECISE);
   m_distMap = m_distMap * m_mapInfo.resolution;
@@ -142,37 +150,40 @@ void GridMap2D::inflateMap(double inflationRadius){
 
 // See costmap2D for mapToWorld / worldToMap implementations:
 
-void GridMap2D::mapToWorld(unsigned int mx, unsigned int my, double& wx, double& wy) const {
-  wx = m_mapInfo.origin.position.x + (mx+0.5) * m_mapInfo.resolution;
-  wy = m_mapInfo.origin.position.y + (my+0.5) * m_mapInfo.resolution;
+void GridMap2D::mapToWorld(unsigned int mx, unsigned int my, double& wx, double& wy) const
+{
+  wx = m_mapInfo.origin.position.x + (mx + 0.5) * m_mapInfo.resolution;
+  wy = m_mapInfo.origin.position.y + (my + 0.5) * m_mapInfo.resolution;
 }
 
-
-
-void GridMap2D::worldToMapNoBounds(double wx, double wy, unsigned int& mx, unsigned int& my) const {
-  mx = (int) ((wx - m_mapInfo.origin.position.x) / m_mapInfo.resolution);
-  my = (int) ((wy - m_mapInfo.origin.position.y) / m_mapInfo.resolution);
+void GridMap2D::worldToMapNoBounds(double wx, double wy, unsigned int& mx, unsigned int& my) const
+{
+  mx = (int)((wx - m_mapInfo.origin.position.x) / m_mapInfo.resolution);
+  my = (int)((wy - m_mapInfo.origin.position.y) / m_mapInfo.resolution);
 }
 
-bool GridMap2D::worldToMap(double wx, double wy, unsigned int& mx, unsigned int& my) const {
-  if(wx < m_mapInfo.origin.position.x || wy < m_mapInfo.origin.position.y)
+bool GridMap2D::worldToMap(double wx, double wy, unsigned int& mx, unsigned int& my) const
+{
+  if (wx < m_mapInfo.origin.position.x || wy < m_mapInfo.origin.position.y)
     return false;
 
-  mx = (int) ((wx - m_mapInfo.origin.position.x) / m_mapInfo.resolution);
-  my = (int) ((wy - m_mapInfo.origin.position.y) / m_mapInfo.resolution);
+  mx = (int)((wx - m_mapInfo.origin.position.x) / m_mapInfo.resolution);
+  my = (int)((wy - m_mapInfo.origin.position.y) / m_mapInfo.resolution);
 
-  if(mx < m_mapInfo.width && my < m_mapInfo.height)
+  if (mx < m_mapInfo.width && my < m_mapInfo.height)
     return true;
 
   return false;
 }
 
-bool GridMap2D::inMapBounds(double wx, double wy) const{
+bool GridMap2D::inMapBounds(double wx, double wy) const
+{
   unsigned mx, my;
-  return worldToMap(wx,wy,mx,my);
+  return worldToMap(wx, wy, mx, my);
 }
 
-float GridMap2D::distanceMapAt(double wx, double wy) const{
+float GridMap2D::distanceMapAt(double wx, double wy) const
+{
   unsigned mx, my;
 
   if (worldToMap(wx, wy, mx, my))
@@ -181,8 +192,8 @@ float GridMap2D::distanceMapAt(double wx, double wy) const{
     return -1.0f;
 }
 
-
-uchar GridMap2D::binaryMapAt(double wx, double wy) const{
+uchar GridMap2D::binaryMapAt(double wx, double wy) const
+{
   unsigned mx, my;
 
   if (worldToMap(wx, wy, mx, my))
@@ -191,26 +202,28 @@ uchar GridMap2D::binaryMapAt(double wx, double wy) const{
     return 0;
 }
 
-float GridMap2D::distanceMapAtCell(unsigned int mx, unsigned int my) const{
+float GridMap2D::distanceMapAtCell(unsigned int mx, unsigned int my) const
+{
   return m_distMap.at<float>(mx, my);
 }
 
-
-uchar GridMap2D::binaryMapAtCell(unsigned int mx, unsigned int my) const{
+uchar GridMap2D::binaryMapAtCell(unsigned int mx, unsigned int my) const
+{
   return m_binaryMap.at<uchar>(mx, my);
 }
 
-uchar& GridMap2D::binaryMapAtCell(unsigned int mx, unsigned int my){
+uchar& GridMap2D::binaryMapAtCell(unsigned int mx, unsigned int my)
+{
   return m_binaryMap.at<uchar>(mx, my);
 }
 
-
-bool GridMap2D::isOccupiedAtCell(unsigned int mx, unsigned int my) const{
+bool GridMap2D::isOccupiedAtCell(unsigned int mx, unsigned int my) const
+{
   return (m_binaryMap.at<uchar>(mx, my) < 255);
 }
 
-
-bool GridMap2D::isOccupiedAt(double wx, double wy) const{
+bool GridMap2D::isOccupiedAt(double wx, double wy) const
+{
   unsigned mx, my;
   if (worldToMap(wx, wy, mx, my))
     return isOccupiedAtCell(mx, my);
@@ -218,6 +231,4 @@ bool GridMap2D::isOccupiedAt(double wx, double wy) const{
     return true;
 }
 
-}
-
-
+}  // namespace gridmap_2d
